@@ -1,0 +1,11 @@
+*** Restrict Content Pro - Braintree WordPress Plugin Changelog ***
+
+2014.05.27 - version 1.0.2
+ * [Fixed] "Subscription Charged Successfully" webhook now consumed for proper reporting
+
+2014.04.29 - version 1.0.1
+ * [Changed] Updated Braintree client lib to v2.27.1
+ * [Fixed] Webhook bugs
+
+2013.11.15 - version 1.0
+ * Initial release
