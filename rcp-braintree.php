@@ -341,7 +341,8 @@ function rcp_braintree_form_fields() {
 
 	      });
 	    </script>
-	    <div id="rcp-braintree-fields" <?php if(count(rcp_get_enabled_payment_gateways()) > 1) { ?>style="display:none;"<?php } ?>>
+	    <fieldset id="rcp-braintree-fields" <?php if(count(rcp_get_enabled_payment_gateways()) > 1) { ?>style="display:none;"<?php } ?>>
+	    <legend><?php _e( 'Billing Details', 'rcp_braintree' ); ?></legend>
 	      <div class="payment-errors"></div>
 	      <p>
 	        <label><?php _e('First Name', 'rcp_braintree'); ?></label>
@@ -398,7 +399,7 @@ function rcp_braintree_form_fields() {
 	        <input type="text" size="20" name="billing_city" class="billing-city" />
 	      </p>
 	      <p>
-	        <label><?php _e('State', 'rcp_braintree'); ?></label>
+	        <label><?php _e('State / Province', 'rcp_braintree'); ?></label>
 	        <input type="text" size="20" name="billing_state" class="billing-state" />
 	      </p>
 	      <p>
@@ -420,7 +421,7 @@ function rcp_braintree_form_fields() {
 	        <label><?php _e('Phone', 'rcp_braintree'); ?></label>
 	        <input type="text" size="20" name="phone" class="phone" />
 	      </p>
-	    </div>
+	    </fieldset>
 	    <script src="https://js.braintreegateway.com/v1/braintree.js"></script>
 	    <script>
 	    var braintree = Braintree.create("<?php
