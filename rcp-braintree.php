@@ -583,7 +583,8 @@ function rcp_braintree_webhook() {
 								'payment_type'     => __( 'Credit Card Subscription', 'rcp_braintree' ),
 								'subscription_key' => $webhookNotification->subscription->id,
 								'amount'           => $transaction->amount,
-								'user_id'          => $user->ID
+								'user_id'          => $user->ID,
+								'transaction_id'   => isset( $transaction->id ) ? $transaction->id : '',
 							);
 							$rcp_payments = new RCP_Payments();
 							$rcp_payments->insert( $payment_data );
