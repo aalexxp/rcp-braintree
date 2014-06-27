@@ -187,7 +187,7 @@ function rcp_braintree_gateway_settings( $rcp_options ) {
 				<label><?php _e( 'Other Info', 'rcp_braintree' ); ?></label>
 			</th>
 			<td>
-				<p><strong>Subscriptions</strong><br />
+				<p><strong><?php _e( 'Subscriptions', 'rcp_braintree' ); ?></strong><br />
 				For recurring subscriptions to work you need to create plans in the Braintree dashboard that correspond
 				to the <a href="<?php echo admin_url( 'admin.php?page=rcp-member-levels' ); ?>">subscriptions levels</a> you set
 				up in Restrict Content Pro. The <strong>plan ID</strong> should match the <strong>subscriptions level ID</strong>.</p>
@@ -442,22 +442,40 @@ add_action('rcp_before_registration_submit_field', 'rcp_braintree_form_fields');
 * cancel subscription
 **************************/
 
-function rcp_braintree_add_cancel_button( $details ) {
+function rcp_braintree_add_cancel_button() {
+	
 	$user_id    = get_current_user_id();
 	$profile_id = get_user_meta( $user_id, 'rcp_recurring_payment_id', true );
-		if ( rcp_get_status( $user_id ) == 'active' && $profile_id ) {
-		$details .= '<li class="rcp_cancel"><a href="' . add_query_arg(
-			array(
-				'cancel_braintree_subscription' => 'yes',
-				'profile_id' => $profile_id
-			)
-		) . '" title="' . __( 'Cancel your subscription', 'rcp' ) . '">' . __( 'Cancel your subscription', 'rcp' ) . '</a></li>';
-	} else if ( get_user_meta( $user_id, 'rcp_receurring_cancelled', true ) ) {
-		$details .= '<li class="rcp_cancelled_message">' . __( 'Your subscription has been cancelled, but you will retain access until you reach the end of the term of your paid amount.', 'rcp_braintree' ) . '</li>';
+
+	if ( rcp_get_status( $user_id ) == 'active' && $profile_id ) {
+		echo '<a id="rcp_cancel_sub" href="' . esc_url( add_query_arg( array( 'cancel_braintree_subscription' => 'yes', 'profile_id' => $profile_id ) ) ) . '">';
+		 	echo __('Cancel your subscription', 'rcp_braintree');
+		echo '</a>';
 	}
-	return $details;
 }
-add_filter( 'rcp_subscription_details_list', 'rcp_braintree_add_cancel_button' );
+add_action( 'rcp_subscription_details_action_links', 'rcp_braintree_add_cancel_button', 999 );
+
+function rcp_braintree_cancel_link_js() {
+
+	$user_id    = get_current_user_id();
+	$profile_id = get_user_meta( $user_id, 'rcp_recurring_payment_id', true );
+
+	if ( rcp_get_status( $user_id ) == 'active' && $profile_id ) {
+?>
+	<script type="text/javascript">
+		jQuery(document).ready(function($) {
+			$('#rcp_cancel_sub').on('click', function() {
+				if(confirm('<?php _e("Do you really want to cancel your subscription? You will retain access for the length of time you have paid for.", "rcp_braintree"); ?>')) {
+					return true;
+				}
+				return false;
+			});
+		});
+	</script>
+<?php
+	}
+}
+add_action('rcp_subscription_details_top', 'rcp_braintree_cancel_link_js');
 
 function rcp_braintree_init() {
 	if ( isset( $_GET['cancel_braintree_subscription'] ) && $_GET['cancel_braintree_subscription'] == 'yes' ) {
@@ -474,12 +492,19 @@ function rcp_braintree_init() {
 add_action( 'init', 'rcp_braintree_init' );
 
 function rcp_cancel_braintree_subscription( $profile_id ) {
-	if( !is_user_logged_in() ) wp_die( __( 'Authorization error', 'rcp_braintree' ), __( 'Authorization Error', 'rcp_braintree' ) );
+
+	if( ! is_user_logged_in() ) {
+		wp_die( __( 'Authorization error', 'rcp_braintree' ), __( 'Authorization Error', 'rcp_braintree' ) );
+	}
+
 	rcp_load_braintree_lib();
 
 	$user_id = get_current_user_id();
 	$user_profile_id = get_user_meta( $user_id, 'rcp_recurring_payment_id', true );
-	if( $profile_id != $user_profile_id ) wp_die( __( 'Authorization error', 'rcp_braintree' ), __( 'Authorization Error', 'rcp_braintree' ) );
+
+	if( $profile_id != $user_profile_id ) {
+		wp_die( __( 'Authorization error', 'rcp_braintree' ), __( 'Authorization Error', 'rcp_braintree' ) );
+	}
 
 	$result = Braintree_Subscription::cancel( $profile_id );
 
@@ -492,6 +517,7 @@ function rcp_cancel_braintree_subscription( $profile_id ) {
     	rcp_email_subscription_status( $user_id, 'cancelled' );
 
     	do_action( 'rcp_braintree_subscription_cancelled', $user_id );
+
 	} else {
 		$output = '<p><strong>'. __( 'Subscription Errors', 'rcp_braintree' ) .':</strong></p>';
 		foreach($result->errors->deepAll() AS $error) {
@@ -500,7 +526,6 @@ function rcp_cancel_braintree_subscription( $profile_id ) {
 		wp_die( $output, __( 'Subscription Errors', 'rcp_braintree' ) );
 	}
 
-	wp_redirect( home_url() ); exit;
 }
 add_action( 'rcp_braintree_cancel_subscription', 'rcp_cancel_braintree_subscription' );
 
@@ -785,13 +810,13 @@ function rcp_load_braintree_lib() {
 
 	if ( isset( $rcp_options['braintree_environment'] ) && $rcp_options['braintree_environment'] == 'sandbox' ) {
 		Braintree_Configuration::environment('sandbox');
-		Braintree_Configuration::merchantId( isset( $rcp_options['braintree_sandbox_merchantId'] ) ? $rcp_options['braintree_sandbox_merchantId'] : null );
-		Braintree_Configuration::publicKey( isset( $rcp_options['braintree_sandbox_publicKey'] ) ? $rcp_options['braintree_sandbox_publicKey'] : null );
-		Braintree_Configuration::privateKey( isset( $rcp_options['braintree_sandbox_privateKey'] ) ? $rcp_options['braintree_sandbox_privateKey'] : null );
+		Braintree_Configuration::merchantId( isset( $rcp_options['braintree_sandbox_merchantId'] ) ? trim( $rcp_options['braintree_sandbox_merchantId'] ) : null );
+		Braintree_Configuration::publicKey( isset( $rcp_options['braintree_sandbox_publicKey'] ) ? trim( $rcp_options['braintree_sandbox_publicKey'] ) : null );
+		Braintree_Configuration::privateKey( isset( $rcp_options['braintree_sandbox_privateKey'] ) ? trim( $rcp_options['braintree_sandbox_privateKey'] ) : null );
 	} else {
-		Braintree_Configuration::merchantId( isset( $rcp_options['braintree_live_merchantId'] ) ? $rcp_options['braintree_live_merchantId'] : null );
-		Braintree_Configuration::publicKey( isset( $rcp_options['braintree_live_publicKey'] ) ? $rcp_options['braintree_live_publicKey'] : null );
-		Braintree_Configuration::privateKey( isset( $rcp_options['braintree_live_privateKey'] ) ? $rcp_options['braintree_live_privateKey'] : null );
+		Braintree_Configuration::merchantId( isset( $rcp_options['braintree_live_merchantId'] ) ? trim( $rcp_options['braintree_live_merchantId'] ) : null );
+		Braintree_Configuration::publicKey( isset( $rcp_options['braintree_live_publicKey'] ) ? trim( $rcp_options['braintree_live_publicKey'] ) : null );
+		Braintree_Configuration::privateKey( isset( $rcp_options['braintree_live_privateKey'] ) ? trim( $rcp_options['braintree_live_privateKey'] ) : null );
 	}
 }
 
