@@ -443,7 +443,7 @@ add_action('rcp_before_registration_submit_field', 'rcp_braintree_form_fields');
 **************************/
 
 function rcp_braintree_add_cancel_button() {
-	
+
 	$user_id    = get_current_user_id();
 	$profile_id = get_user_meta( $user_id, 'rcp_recurring_payment_id', true );
 
@@ -575,17 +575,17 @@ function rcp_braintree_webhook() {
 							$rcp_payments->insert( $payment_data );
 
 							$subscription = rcp_get_subscription_details( rcp_get_subscription_id( $user->ID ) );
-	
+
 							$member_new_expiration = rcp_calc_member_expiration( $subscription );
-							
+
 							if( function_exists( 'rcp_set_expiration_date' ) ) {
 								rcp_set_expiration_date( $user->ID, $member_new_expiration );
 							} else {
 								update_user_meta( $user->ID, 'rcp_expiration', $member_new_expiration );
 							}
-							
+
 							rcp_set_status( $user->ID, 'active' );
-							
+
 							update_user_meta( $user->ID, 'rcp_recurring_payment_id', $webhookNotification->subscription->id );
 							update_user_meta( $user->ID, 'rcp_recurring', 'yes' );
 							delete_user_meta( $user->ID, '_rcp_expired_email_sent' );
