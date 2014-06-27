@@ -4,8 +4,8 @@ Plugin Name: Restrict Content Pro - Braintree Gateway
 Plugin URL: http://dev7studios.com/restrict-content-pro-braintree
 Description: Enables the Braintree gateway for Restict Content Pro
 Version: 1.0.2
-Author: Dev7studios
-Author URI: http://dev7studios.com
+Author: Pippin Williamson
+Author URI: https://pippinsplugins.com
 */
 
 /**************************
@@ -30,6 +30,30 @@ function rcp_braintree_load_textdomain() {
 	load_plugin_textdomain( 'rcp_braintree', false, dirname( plugin_basename( __FILE__ ) ) . '/lang/' );
 }
 add_action( 'init', 'rcp_braintree_load_textdomain' );
+
+
+function rcp_braintree_updater() {
+
+	global $rcp_options;
+
+	if( ! class_exists( 'RCP_Plugin_Updater' ) )
+		return;
+
+	// retrieve our license key from the DB
+	$license_key = ! empty( $rcp_options['braintree_license_key'] ) ? trim( $rcp_options['braintree_license_key'] ) : false;
+
+	if( $license_key ) {
+		// setup the updater
+		$rcp_updater = new RCP_Plugin_Updater( 'https://pippinsplugins.com', __FILE__, array(
+				'version' 	=> '1.0.2',
+				'license' 	=> $license_key,
+				'item_name' => 'Restrict Content Pro Braintree Payment Gateway',
+				'author' 	=> 'Pippin Williamson'
+			)
+		);
+	}
+}
+add_action( 'admin_init', 'rcp_braintree_updater' );
 
 /**************************
 * includes
@@ -180,6 +204,119 @@ function rcp_braintree_gateway_settings( $rcp_options ) {
 	echo apply_filters( 'rcp_braintree_gateway_settings', ob_get_clean() );
 }
 add_action('rcp_payments_settings', 'rcp_braintree_gateway_settings');
+
+function rcp_braintree_license_settings( $rcp_options ) {
+	ob_start(); ?>
+	<tr valign="top">
+		<th>
+			<label for="rcp_settings[braintree_license_key]"><?php _e( 'Braintree License Key', 'rcp_braintree' ); ?></label>
+		</th>
+		<td>
+			<input class="regular-text" id="rcp_settings[braintree_license_key]" style="width: 300px;" name="rcp_settings[braintree_license_key]" value="<?php if(isset($rcp_options['braintree_license_key'])) { echo $rcp_options['braintree_license_key']; } ?>"/>
+			<?php $status = get_option( 'rcp_braintree_license_status' ); ?>
+			<?php if( $status !== false && $status == 'valid' ) { ?>
+				<?php wp_nonce_field( 'rcp_braintree_deactivate_license', 'rcp_braintree_deactivate_license' ); ?>
+				<input type="submit" class="button-secondary" name="rcp_braintree_license_deactivate" value="<?php _e('Deactivate License', 'rcp_braintree'); ?>"/>
+				<span style="color:green;"><?php _e('active'); ?></span>
+			<?php } ?>
+			<div class="description"><?php printf( __( 'Enter your license key for the Braintree Payment Gateway. This is required for automatic updates and <a href="%s">support</a>.', 'rcp_braintree' ), 'https://pippinsplugins.com/plugin-support' ); ?></div>
+		</td>
+	</tr>
+<?php
+	echo ob_get_clean();
+}
+add_action('rcp_license_settings', 'rcp_braintree_license_settings');
+
+
+function rcp_braintree_save_settings( $data ) {
+
+	if( empty( $data['braintree_license_key'] ) )
+		delete_option( 'rcp_braintree_license_status' );
+
+	if( ! empty( $_POST['rcp_braintree_license_deactivate'] ) )
+		rcp_braintree_deactivate_license();
+	elseif( ! empty( $data['braintree_license_key'] ) )
+		rcp_braintree_activate_license();
+
+
+	return $data;
+}
+add_action( 'rcp_save_settings', 'rcp_braintree_save_settings' );
+
+function rcp_braintree_activate_license() {
+	if( ! isset( $_POST['rcp_settings'] ) )
+		return;
+
+	if( ! isset( $_POST['rcp_settings']['braintree_license_key'] ) )
+		return;
+
+	// retrieve the license from the database
+	$status  = get_option( 'rcp_braintree_license_status' );
+	$license = trim( $_POST['rcp_settings']['braintree_license_key'] );
+
+	if( 'valid' == $status )
+		return; // license already activated
+
+	// data to send in our API request
+	$api_params = array(
+		'edd_action'=> 'activate_license',
+		'license' 	=> $license,
+		'item_name' => urlencode( 'Restrict Content Pro Braintree Payment Gateway' ), // the name of our product in EDD
+		'url'       => home_url()
+	);
+
+	// Call the custom API.
+	$response = wp_remote_get( add_query_arg( $api_params, 'https://pippinsplugins.com' ), array( 'timeout' => 15, 'sslverify' => false ) );
+
+	// make sure the response came back okay
+	if ( is_wp_error( $response ) )
+		return false;
+
+	// decode the license data
+	$license_data = json_decode( wp_remote_retrieve_body( $response ) );
+
+	update_option( 'rcp_braintree_license_status', $license_data->license );
+
+}
+
+function rcp_braintree_deactivate_license() {
+
+	// listen for our activate button to be clicked
+	if( isset( $_POST['rcp_braintree_license_deactivate'] ) ) {
+
+		global $rcp_options;
+
+		// run a quick security check
+	 	if( ! check_admin_referer( 'rcp_braintree_deactivate_license', 'rcp_braintree_deactivate_license' ) )
+			return; // get out if we didn't click the Activate button
+
+		// retrieve the license from the database
+		$license = trim( $rcp_options['braintree_license_key'] );
+
+		// data to send in our API request
+		$api_params = array(
+			'edd_action'=> 'deactivate_license',
+			'license' 	=> $license,
+			'item_name' => urlencode( 'Restrict Content Pro Braintree Payment Gateway' ), // the name of our product in EDD
+			'url'       => home_url()
+		);
+
+		// Call the custom API.
+		$response = wp_remote_get( add_query_arg( $api_params, 'https://pippinsplugins.com' ), array( 'timeout' => 15, 'sslverify' => false ) );
+
+		// make sure the response came back okay
+		if ( is_wp_error( $response ) )
+			return false;
+
+		// decode the license data
+		$license_data = json_decode( wp_remote_retrieve_body( $response ) );
+
+		// $license_data->license will be either "deactivated" or "failed"
+		if( $license_data->license == 'deactivated' )
+			delete_option( 'rcp_braintree_license_status' );
+
+	}
+}
 
 /**************************
 * form fields
