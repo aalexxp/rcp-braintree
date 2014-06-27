@@ -458,6 +458,10 @@ add_action( 'rcp_subscription_details_action_links', 'rcp_braintree_add_cancel_b
 
 function rcp_braintree_cancel_link_js() {
 
+	global $rcp_load_css;
+
+	$rcp_load_css = true;
+
 	$user_id    = get_current_user_id();
 	$profile_id = get_user_meta( $user_id, 'rcp_recurring_payment_id', true );
 
@@ -475,6 +479,13 @@ function rcp_braintree_cancel_link_js() {
 	</script>
 <?php
 	}
+
+	if( ! empty( $_GET['cancelled'] ) && 'yes' == $_GET['cancelled'] ) {
+		echo '<div class="rcp_message updated">';
+			echo '<p class="rcp_success"><span>' . __( 'Your subscription has been successfully cancelled', 'rcp_braintree' ) . '</span></p>';
+		echo '</div>';
+	}
+
 }
 add_action('rcp_subscription_details_top', 'rcp_braintree_cancel_link_js');
 
@@ -526,6 +537,8 @@ function rcp_cancel_braintree_subscription( $profile_id ) {
 		}
 		wp_die( $output, __( 'Subscription Errors', 'rcp_braintree' ) );
 	}
+
+	wp_redirect( add_query_arg( 'cancelled', 'yes', $_SERVER['HTTP_REFERER'] ) ); exit;
 
 }
 add_action( 'rcp_braintree_cancel_subscription', 'rcp_cancel_braintree_subscription' );
