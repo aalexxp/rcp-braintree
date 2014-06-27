@@ -742,7 +742,9 @@ function rcp_process_braintree( $subscription_data ) {
 			);
 
 		    $paid = true;
-		    if ( $type == 'subscription' ) $credit_card_token = $result->customer->creditCards[0]->token;
+		    if ( $type == 'subscription' ) {
+		    	$credit_card_token = $result->customer->creditCards[0]->token;
+			}
 		} else if ( $result->transaction ) {
 		    wp_die( $result->message, $result->transaction->processorResponseCode );
 		} else {
