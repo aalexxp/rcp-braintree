@@ -742,6 +742,7 @@ function rcp_process_braintree( $subscription_data ) {
 		}
 	}
 
+
 	if( isset( $result ) ){
 		if ( $result->success ) {
 			$payment_data = array(
@@ -831,6 +832,7 @@ function rcp_load_braintree_lib() {
 		Braintree_Configuration::publicKey( isset( $rcp_options['braintree_sandbox_publicKey'] ) ? trim( $rcp_options['braintree_sandbox_publicKey'] ) : null );
 		Braintree_Configuration::privateKey( isset( $rcp_options['braintree_sandbox_privateKey'] ) ? trim( $rcp_options['braintree_sandbox_privateKey'] ) : null );
 	} else {
+		Braintree_Configuration::environment('production');
 		Braintree_Configuration::merchantId( isset( $rcp_options['braintree_live_merchantId'] ) ? trim( $rcp_options['braintree_live_merchantId'] ) : null );
 		Braintree_Configuration::publicKey( isset( $rcp_options['braintree_live_publicKey'] ) ? trim( $rcp_options['braintree_live_publicKey'] ) : null );
 		Braintree_Configuration::privateKey( isset( $rcp_options['braintree_live_privateKey'] ) ? trim( $rcp_options['braintree_live_privateKey'] ) : null );
