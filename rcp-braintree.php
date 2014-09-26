@@ -525,6 +525,8 @@ function rcp_cancel_braintree_subscription( $profile_id ) {
 		update_user_meta( $user_id, 'rcp_recurring_cancelled', 'yes' );
 		delete_user_meta( $user_id, 'rcp_recurring_payment_id' );
 
+		rcp_set_status( $user_id, 'cancelled' );
+
 		// send sub cancelled email
     	rcp_email_subscription_status( $user_id, 'cancelled' );
 
