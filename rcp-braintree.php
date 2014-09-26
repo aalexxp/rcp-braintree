@@ -3,7 +3,7 @@
 Plugin Name: Restrict Content Pro - Braintree Gateway
 Plugin URL: http://dev7studios.com/restrict-content-pro-braintree
 Description: Enables the Braintree gateway for Restict Content Pro
-Version: 1.0.3
+Version: 1.0.4
 Author: Pippin Williamson
 Author URI: https://pippinsplugins.com
 */
@@ -45,7 +45,7 @@ function rcp_braintree_updater() {
 	if( $license_key ) {
 		// setup the updater
 		$rcp_updater = new RCP_Plugin_Updater( 'https://pippinsplugins.com', __FILE__, array(
-				'version' 	=> '1.0.3',
+				'version' 	=> '1.0.4',
 				'license' 	=> $license_key,
 				'item_name' => 'Restrict Content Pro Braintree Payment Gateway',
 				'author' 	=> 'Pippin Williamson'
