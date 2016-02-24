@@ -785,10 +785,14 @@ function rcp_process_braintree( $subscription_data ) {
 		if ( $type == 'subscription' && isset( $credit_card_token ) ) {
 			$subscription_id = rcp_get_subscription_id( $data['user_id'] );
 
-			$subscription_result = Braintree_Subscription::create(array(
-				'paymentMethodToken' => $credit_card_token,
-				'planId' => $subscription_id
-			));
+			$subscriptionRequestParams = array(
+                		'paymentMethodToken' => $credit_card_token,
+                		'planId' => $subscription_id
+            		);
+
+            		$subscriptionRequestParams = apply_filters('rcp_braintree_create_subscription_args', $subscriptionRequestParams);
+
+            		$subscription_result = Braintree_Subscription::create($subscriptionRequestParams);
 
 			if ( $subscription_result->success ) {
 				update_user_meta( $data['user_id'], 'rcp_recurring_payment_id', $subscription_result->subscription->id );
